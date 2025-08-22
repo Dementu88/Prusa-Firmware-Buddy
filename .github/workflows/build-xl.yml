@@ -1,9 +1,9 @@
 name: Build XL firmware
 
 on:
-  workflow_dispatch: {}        # ręczne uruchomienie z Actions
+  workflow_dispatch: {}
   push:
-    branches: [ master ]       # opcjonalnie: automatycznie po commicie
+    branches: [ master ]
 
 jobs:
   build-xl:
@@ -15,33 +15,28 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install build deps
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            ninja-build cmake \
-            gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi \
-            python3
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Configure (xl_release_boot)
-        run: cmake --preset xl_release_boot
-
-      - name: Build
-        run: cmake --build --preset xl_release_boot -j$(nproc)
-
-      - name: Locate firmware.bbf
-        id: findbbf
+      # Klucz: używamy ich skryptu build.py – on sam pobierze ninja/toolchain
+      - name: Build XL release (boot)
         run: |
-          ART=$(find . -type f -name "firmware.bbf" | head -n 1)
-          if [ -z "$ART" ]; then
-            echo "Nie znaleziono firmware.bbf" >&2
-            exit 1
-          fi
-          echo "ARTIFACT=$ART" >> $GITHUB_ENV
-          echo "Znalazłem: $ART"
+          python utils/build.py --preset xl --build-type release --final
 
-      - name: Upload artifact
+      - name: List products
+        run: ls -R build/products || true
+
+      - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-bbf
-          path: ${{ env.ARTIFACT }}
+          name: xl-firmware
+          path: |
+            build/products/**/*.bbf
+            build/products/**/*.bin

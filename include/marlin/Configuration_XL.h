@@ -996,7 +996,7 @@
 #define XY_PROBE_SPEED 18000
 
 // Feedrate (mm/m) for the first approach when double-probing (MULTIPLE_PROBING == 2)
-#define Z_PROBE_SPEED_FAST 6 * 100
+#define Z_PROBE_SPEED_FAST 200
 
 // Feedrate (mm/m) for the "accurate" probe of each point
 #define Z_PROBE_SPEED_SLOW 70
@@ -1473,7 +1473,8 @@
 
 // Homing speeds (mm/m)
 #define HOMING_FEEDRATE_XY (52 * 60)
-#define HOMING_FEEDRATE_Z (8 * 60)
+//#define HOMING_FEEDRATE_Z (8 * 60)
+#define HOMING_FEEDRATE_Z (2 * 60)
 #define HOMING_FEEDRATE_INVERTED_Z (15 * 60)
 
 // Validate that endstops are triggered on homing moves

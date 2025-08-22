@@ -1,0 +1,47 @@
+name: Build XL firmware
+
+on:
+  workflow_dispatch: {}        # ręczne uruchomienie z Actions
+  push:
+    branches: [ master ]       # opcjonalnie: automatycznie po commicie
+
+jobs:
+  build-xl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build cmake \
+            gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi \
+            python3
+
+      - name: Configure (xl_release_boot)
+        run: cmake --preset xl_release_boot
+
+      - name: Build
+        run: cmake --build --preset xl_release_boot -j$(nproc)
+
+      - name: Locate firmware.bbf
+        id: findbbf
+        run: |
+          ART=$(find . -type f -name "firmware.bbf" | head -n 1)
+          if [ -z "$ART" ]; then
+            echo "Nie znaleziono firmware.bbf" >&2
+            exit 1
+          fi
+          echo "ARTIFACT=$ART" >> $GITHUB_ENV
+          echo "Znalazłem: $ART"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bbf
+          path: ${{ env.ARTIFACT }}
